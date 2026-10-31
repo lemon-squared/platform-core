@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Biome (lint + format, includes the no-@gp/* import rule)
+        run: bunx biome ci .
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Tests (includes the no-NHS boundary test)
+        run: bun run test
+      - name: Package contents
+        run: npm pack --dry-run

@@ -1,0 +1,63 @@
+# Publishes @lemon-squared/platform to GitHub Packages (npm.pkg.github.com).
+# Manual only: it never runs on push or tag. Dry run is the default.
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Dry run (pack and check only, do not publish)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: "@lemon-squared"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - run: bunx biome ci .
+      - run: bun run typecheck
+      - run: bun run test
+      - name: No unreleased changesets
+        run: |
+          if ls .changeset/*.md 2>/dev/null | grep -v README.md; then
+            echo "::error::Pending changesets. Run 'bun run version' and merge the version bump first."
+            exit 1
+          fi
+      - name: Version not already published
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if npm view "@lemon-squared/platform@$v" version >/dev/null 2>&1; then
+            echo "::error::@lemon-squared/platform@$v is already published. Bump the version with a changeset."
+            exit 1
+          fi
+          echo "Publishing version $v"
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            npm publish --dry-run
+          else
+            npm publish
+          fi

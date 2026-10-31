@@ -1,0 +1,44 @@
+{
+  "name": "@lemon-squared/platform",
+  "version": "0.1.0",
+  "description": "Generic multi-tenant site runtime shared by Lemon Squared products: host resolution, domains, health checks, SEO helpers, UK phone formatting, slugs. No product-specific code.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lemon-squared/platform-core.git"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./domains": "./src/domains.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "scripts": {
+    "check": "biome ci . && tsc --noEmit -p . && bun test",
+    "lint": "biome ci .",
+    "format": "biome check --write .",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "bun test",
+    "changeset": "changeset",
+    "version": "changeset version && biome format --write package.json",
+    "pack:check": "npm pack --dry-run"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@changesets/cli": "3.0.3",
+    "@types/bun": "1.4.4",
+    "typescript": "5.7.3"
+  }
+}
